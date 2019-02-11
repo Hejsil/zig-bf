@@ -3,7 +3,7 @@ const std = @import("std");
 const io = std.io;
 const mem = std.mem;
 const math = std.math;
-const debug = std.debug;
+const testing = std.testing;
 
 fn testBfMethod(comptime method: var, comptime program: []const u8, result: []const u8) !void {
     var in = []u8{0} ** 1024;
@@ -13,7 +13,7 @@ fn testBfMethod(comptime method: var, comptime program: []const u8, result: []co
     var in_fs = io.SliceInStream.init(in[0..]);
     var out_fs = io.SliceOutStream.init(out[0..]);
     try method(program, tape[0..], &in_fs.stream, &out_fs.stream);
-    debug.assert(mem.startsWith(u8, out, result));
+    testing.expect(mem.startsWith(u8, out, result));
 }
 
 fn load(m: []const u8, ptr: usize) !u8 {
