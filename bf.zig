@@ -6,9 +6,9 @@ const math = std.math;
 const testing = std.testing;
 
 fn testBfMethod(comptime method: var, comptime program: []const u8, result: []const u8) !void {
-    var in = []u8{0} ** 1024;
-    var out = []u8{0} ** 1024;
-    var tape = []u8{0} ** 1024;
+    var in = [_]u8{0} ** 1024;
+    var out = [_]u8{0} ** 1024;
+    var tape = [_]u8{0} ** 1024;
 
     var in_fs = io.SliceInStream.init(in[0..]);
     var out_fs = io.SliceOutStream.init(out[0..]);
