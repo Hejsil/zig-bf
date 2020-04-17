@@ -10,10 +10,10 @@ fn testBfMethod(comptime method: var, comptime program: []const u8, result: []co
     var out = [_]u8{0} ** 1024;
     var tape = [_]u8{0} ** 1024;
 
-    var in_fs = io.SliceInStream.init(in[0..]);
-    var out_fs = io.SliceOutStream.init(out[0..]);
-    try method(program, tape[0..], &in_fs.stream, &out_fs.stream);
-    testing.expect(mem.startsWith(u8, out, result));
+    var in_s = io.fixedBufferStream(&in);
+    var out_s = io.fixedBufferStream(&out);
+    try method(program, &tape, in_s.inStream(), out_s.outStream());
+    testing.expect(mem.startsWith(u8, &out, result));
 }
 
 fn load(m: []const u8, ptr: usize) !u8 {
