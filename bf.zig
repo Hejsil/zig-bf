@@ -5,7 +5,7 @@ const mem = std.mem;
 const math = std.math;
 const testing = std.testing;
 
-fn testBfMethod(comptime method: var, comptime program: []const u8, result: []const u8) !void {
+fn testBfMethod(comptime method: anytype, comptime program: []const u8, result: []const u8) !void {
     var in = [_]u8{0} ** 1024;
     var out = [_]u8{0} ** 1024;
     var tape = [_]u8{0} ** 1024;
@@ -40,7 +40,7 @@ fn sub(m: []u8, ptr: usize, v: u8) !void {
     store(m, ptr, res -% v) catch unreachable;
 }
 
-pub fn interpret(program: []const u8, tape: []u8, in_stream: var, out_stream: var) !void {
+pub fn interpret(program: []const u8, tape: []u8, in_stream: anytype, out_stream: anytype) !void {
     var ip: usize = 0;
     var mp: usize = 0;
 
@@ -91,12 +91,12 @@ test "bf.interpret" {
     );
 }
 
-pub fn compile(comptime program: []const u8, tape: []u8, in_stream: var, out_stream: var) !void {
+pub fn compile(comptime program: []const u8, tape: []u8, in_stream: anytype, out_stream: anytype) !void {
     var mp: usize = 0;
     return try compileHelper(program, &mp, tape, in_stream, out_stream);
 }
 
-fn compileHelper(comptime program: []const u8, mp: *usize, tape: []u8, in_stream: var, out_stream: var) !void {
+fn compileHelper(comptime program: []const u8, mp: *usize, tape: []u8, in_stream: anytype, out_stream: anytype) !void {
     comptime var ip = 0;
     inline while (ip < program.len) : (ip += 1) {
         switch (program[ip]) {
