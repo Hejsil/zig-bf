@@ -1,8 +1,8 @@
 const std = @import("std");
 
 const io = std.io;
-const mem = std.mem;
 const math = std.math;
+const mem = std.mem;
 const testing = std.testing;
 
 fn testBfMethod(comptime method: anytype, comptime program: []const u8, result: []const u8) !void {
@@ -10,10 +10,10 @@ fn testBfMethod(comptime method: anytype, comptime program: []const u8, result: 
     var out = [_]u8{0} ** 1024;
     var tape = [_]u8{0} ** 1024;
 
-    var in_s = io.fixedBufferStream(&in);
-    var out_s = io.fixedBufferStream(&out);
-    try method(program, &tape, in_s.inStream(), out_s.outStream());
-    testing.expect(mem.startsWith(u8, &out, result));
+    var reader = io.fixedBufferStream(&in);
+    var writer = io.fixedBufferStream(&out);
+    try method(program, &tape, reader.reader(), writer.writer());
+    try testing.expect(mem.startsWith(u8, &out, result));
 }
 
 fn load(m: []const u8, ptr: usize) !u8 {
@@ -40,7 +40,7 @@ fn sub(m: []u8, ptr: usize, v: u8) !void {
     store(m, ptr, res -% v) catch unreachable;
 }
 
-pub fn interpret(program: []const u8, tape: []u8, in_stream: anytype, out_stream: anytype) !void {
+pub fn interpret(program: []const u8, tape: []u8, reader: anytype, writer: anytype) !void {
     var ip: usize = 0;
     var mp: usize = 0;
 
@@ -50,8 +50,8 @@ pub fn interpret(program: []const u8, tape: []u8, in_stream: anytype, out_stream
             '<' => mp = math.sub(usize, mp, 1) catch return error.OutOfBounds,
             '+' => try add(tape, mp, 1),
             '-' => try sub(tape, mp, 1),
-            '.' => try out_stream.writeByte(try load(tape, mp)),
-            ',' => try store(tape, mp, try in_stream.readByte()),
+            '.' => try writer.writeByte(try load(tape, mp)),
+            ',' => try store(tape, mp, try reader.readByte()),
             '[' => {
                 if ((try load(tape, mp)) == 0) {
                     var skips: usize = 1;
@@ -91,12 +91,12 @@ test "bf.interpret" {
     );
 }
 
-pub fn compile(comptime program: []const u8, tape: []u8, in_stream: anytype, out_stream: anytype) !void {
+pub fn compile(comptime program: []const u8, tape: []u8, reader: anytype, writer: anytype) !void {
     var mp: usize = 0;
-    return try compileHelper(program, &mp, tape, in_stream, out_stream);
+    return try compileHelper(program, &mp, tape, reader, writer);
 }
 
-fn compileHelper(comptime program: []const u8, mp: *usize, tape: []u8, in_stream: anytype, out_stream: anytype) !void {
+fn compileHelper(comptime program: []const u8, mp: *usize, tape: []u8, reader: anytype, writer: anytype) !void {
     comptime var ip = 0;
     inline while (ip < program.len) : (ip += 1) {
         switch (program[ip]) {
@@ -104,8 +104,8 @@ fn compileHelper(comptime program: []const u8, mp: *usize, tape: []u8, in_stream
             '<' => mp.* = math.sub(usize, mp.*, 1) catch return error.OutOfBounds,
             '+' => try add(tape, mp.*, 1),
             '-' => try sub(tape, mp.*, 1),
-            '.' => try out_stream.writeByte(try load(tape, mp.*)),
-            ',' => try store(tape, mp.*, try in_stream.readByte()),
+            '.' => try writer.writeByte(try load(tape, mp.*)),
+            ',' => try store(tape, mp.*, try reader.readByte()),
             '[' => {
                 const start = ip + 1;
                 const end = comptime blk: {
@@ -123,7 +123,7 @@ fn compileHelper(comptime program: []const u8, mp: *usize, tape: []u8, in_stream
                 };
 
                 while ((try load(tape, mp.*)) != 0) {
-                    try compileHelper(program[start..end], mp, tape, in_stream, out_stream);
+                    try compileHelper(program[start..end], mp, tape, reader, writer);
                 }
             },
             ']' => comptime unreachable,
